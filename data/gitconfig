@@ -1,0 +1,5 @@
+[user]
+	email = you@example.com
+	name = Your Name
+[color]
+	ui = auto

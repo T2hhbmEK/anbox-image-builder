@@ -1,0 +1,11 @@
+Index: src/vendor/anbox/products/anbox.mk
+===================================================================
+--- src.orig/vendor/anbox/products/anbox.mk	2020-09-16 22:53:43.471760140 +0000
++++ src/vendor/anbox/products/anbox.mk	2020-09-16 22:54:24.335461305 +0000
+@@ -98,3 +98,6 @@
+ 
+ PRODUCT_COPY_FILES += \
+ 	vendor/anbox/products/anbox.xml:system/etc/permissions/anbox.xml
++
++PRODUCT_PACKAGES += FDroid FDroidPrivilegedExtension
++DONT_DEXPREOPT_PREBUILTS := true

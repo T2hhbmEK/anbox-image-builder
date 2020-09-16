@@ -1,0 +1,21 @@
+Index: src/vendor/anbox/products/arm64/BoardConfig.mk
+===================================================================
+--- src.orig/vendor/anbox/products/arm64/BoardConfig.mk	2020-09-16 22:53:07.268091587 +0000
++++ src/vendor/anbox/products/arm64/BoardConfig.mk	2020-09-16 22:53:07.258091493 +0000
+@@ -11,6 +11,7 @@
+ TARGET_ARCH_VARIANT := armv8-a
+ TARGET_CPU_VARIANT := generic
+ TARGET_CPU_ABI := arm64-v8a
++ARCH_ARM_HAVE_NEON := true
+ 
+ # TARGET_2ND_ARCH := arm
+ # TARGET_2ND_ARCH_VARIANT := armv7-a-neon
+@@ -22,8 +23,6 @@
+ 
+ TARGET_USES_64_BIT_BINDER := true
+ 
+-SMALLER_FONT_FOOTPRINT := true
+-MINIMAL_FONT_FOOTPRINT := true
+ # Some framework code requires this to enable BT
+ BOARD_HAVE_BLUETOOTH := true
+ BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/generic/common/bluetooth
