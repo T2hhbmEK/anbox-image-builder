@@ -15,6 +15,7 @@ RUN groupadd -g $groupid $username \
  && echo $username >/root/username
 COPY data/gitconfig /home/$username/.gitconfig
 ADD data /data
+ADD patches /patches
 ENV HOME=/home/$username
 ENV USER=$username
 ENTRYPOINT chroot --userspec=$(cat /root/username):$(cat /root/username) / /data/anbox-build.sh

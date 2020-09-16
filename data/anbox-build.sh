@@ -11,16 +11,16 @@ if [ ! -d .repo/local_manifests ]; then
   cp -r /anbox/local_manifests .repo/
 fi
 
-export QUILT_PATCHES=.data
+export QUILT_PATCHES=.patches
 
 if [ -d .pc ]; then
   quilt pop -a
-  rm -rf .data
+  rm -rf .patches
 fi
 
 repo sync --force-sync
 
-cp -r /data .data
+cp -r /patches .patches
 
 quilt push -a
 
