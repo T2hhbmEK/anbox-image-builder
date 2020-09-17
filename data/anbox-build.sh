@@ -8,7 +8,7 @@ if [ ! -d .repo ]; then
 fi
 
 if [ ! -d .repo/local_manifests ]; then
-  cp -r /anbox/local_manifests .repo/
+  cp -r /data/local_manifests .repo/
 fi
 
 export QUILT_PATCHES=.patches

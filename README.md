@@ -6,7 +6,7 @@ This tool builds an image with F-Droid and F-Droid Privileged Extension included
 
 ## Usage:
 
-Make sure Docker is installed and execute:
+Make sure Docker is installed (`sudo apt install docker.io`) and execute:
 
 ```
 ./build.sh
