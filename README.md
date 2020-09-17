@@ -6,7 +6,13 @@ This tool builds an image with F-Droid and F-Droid Privileged Extension included
 
 ## Usage:
 
-Make sure Docker is installed (`sudo apt install docker.io`) and execute:
+You need Docker, mksquashfs and gcc:
+
+```
+sudo apt install docker.io squashfs-tools gcc
+```
+
+To launch the build, run:
 
 ```
 ./build.sh
@@ -18,4 +24,4 @@ Directory `anbox-work` will be created where all AOSP sources will be downloaded
 
 ## Installation:
 
-Put the `anbox-work/android.img` file into `/var/lib/anbox/android.img` on your phone and reboot.
+Put the `anbox-work/vendor/anbox/android.img` file into `/var/lib/anbox/android.img` on your phone and reboot.

@@ -27,4 +27,3 @@ quilt push -a
 . build/envsetup.sh
 lunch anbox_arm64-userdebug
 make -j9
-vendor/anbox/scripts/create-package.sh "$PWD/out/target/product/arm64/ramdisk.img" "$PWD/out/target/product/arm64/system.img"

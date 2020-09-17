@@ -23,3 +23,5 @@ fi
 $DOCKER build --build-arg userid=$(id -u) --build-arg groupid=$(id -g) --build-arg username=$(id -un) -t anbox-build-trusty .
 mkdir -p anbox-work
 $DOCKER run -it --rm -v "$(realpath anbox-work)":/src anbox-build-trusty /data/anbox-build.sh
+cd anbox-work/vendor/anbox
+scripts/create-package.sh "$PWD/../../out/target/product/arm64/ramdisk.img" "$PWD/../../out/target/product/arm64/system.img"
