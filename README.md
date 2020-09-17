@@ -22,9 +22,15 @@ Use `./build.sh --sudo` if your user does not have permission to use Docker daem
 
 Directory `anbox-work` will be created where all AOSP sources will be downloaded to and where the build will be performed. You'll need at least 60GB of free disk space and 16GB of RAM.
 
+After successful build, assemble the image with:
+
+```
+./assemble.sh
+```
+
 ## Installation:
 
-Put the `anbox-work/vendor/anbox/android.img` file into `/var/lib/anbox/android.img` on your phone and reboot.
+Put the `android.img` file into `/var/lib/anbox/android.img` on your phone and reboot.
 
 ## Cleanup
 
