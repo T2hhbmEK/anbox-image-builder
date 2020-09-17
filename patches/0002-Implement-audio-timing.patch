@@ -1,0 +1,71 @@
+From 7b3b78f101bab02bae855f23b557e81d5dc7c95e Mon Sep 17 00:00:00 2001
+From: awakening <lucidsunlight@yandex.ru>
+Date: Sun, 20 Jan 2019 22:20:27 +0700
+Subject: [PATCH 2/2] Implement audio timing
+
+---
+ vendor/anbox/android/audio/audio_hw.cpp            |  8 ++++++++
+ vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp | 17 ++++++++++++++++-
+ 2 files changed, 24 insertions(+), 1 deletion(-)
+
+diff --git a/vendor/anbox/android/audio/audio_hw.cpp b/vendor/anbox/android/audio/audio_hw.cpp
+index f44e738..39b8456 100644
+--- a/vendor/anbox/android/audio/audio_hw.cpp
++++ b/vendor/anbox/android/audio/audio_hw.cpp
+@@ -180,6 +180,14 @@ static ssize_t out_write(struct audio_stream_out *stream, const void *buffer,
+   pthread_mutex_lock(&adev->lock);
+   if (out->fd >= 0)
+     bytes = write(out->fd, buffer, bytes);
++
++  // wait until session writes the data we sent,
++  // this will block if sink queue is full,
++  // acting as synchronization to time audio
++  int64_t arrived_us;
++  read(out->fd, &arrived_us, sizeof(arrived_us));
++  (void) arrived_us;
++
+   pthread_mutex_unlock(&adev->lock);
+   return bytes;
+ }
+diff --git a/vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp b/vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp
+index 118093d..480fe18 100644
+--- a/vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp
++++ b/vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp
+@@ -19,11 +19,12 @@
+ #include "anbox/logger.h"
+ 
+ #include <stdexcept>
++#include <time.h>
+ 
+ #include <boost/throw_exception.hpp>
+ 
+ namespace {
+-const constexpr size_t max_queue_size{16};
++const constexpr size_t max_queue_size{1};
+ }
+ 
+ namespace anbox {
+@@ -114,6 +115,20 @@ void AudioSink::write_data(const std::vector<std::uint8_t> &data) {
+   }
+   graphics::Buffer buffer{data.data(), data.data() + data.size()};
+   queue_.push_locked(std::move(buffer), l);
++
++  // Android side is waiting for "confirmation" that data arrived,
++  // if sink queue is full, Android audio thread will be blocked 
++  // untill there's space available in the queue
++  // 
++  // this acts as sychronization to time audio
++  //
++  // at the time of implementation, 
++  // the data we send to Android is not actually used
++  timespec t;
++  clock_gettime(CLOCK_MONOTONIC, &t);
++  int64_t now_us = (t.tv_sec * 1000000000LL + t.tv_nsec) / 1000;
++
++  messenger_->send(reinterpret_cast<char*>(&now_us), sizeof(now_us));
+ }
+ } // namespace sdl
+ } // namespace platform
+-- 
+2.28.0
+

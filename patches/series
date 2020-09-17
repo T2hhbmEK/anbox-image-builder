@@ -1,2 +1,5 @@
 anbox.patch
 fdroid.patch
+
+0001-Pass-messenger-to-audio-sink.patch
+0002-Implement-audio-timing.patch

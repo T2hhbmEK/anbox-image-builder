@@ -1,0 +1,174 @@
+From ff9b8a5526b8e3400638d7e266d40574230ccff6 Mon Sep 17 00:00:00 2001
+From: awakening <lucidsunlight@yandex.ru>
+Date: Sun, 20 Jan 2019 21:54:03 +0700
+Subject: [PATCH 1/2] Pass messenger to audio sink
+
+---
+ vendor/anbox/src/anbox/audio/server.cpp            | 9 ++++++---
+ vendor/anbox/src/anbox/platform/base_platform.h    | 3 ++-
+ vendor/anbox/src/anbox/platform/null/platform.cpp  | 3 ++-
+ vendor/anbox/src/anbox/platform/null/platform.h    | 2 +-
+ vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp | 3 ++-
+ vendor/anbox/src/anbox/platform/sdl/audio_sink.h   | 6 ++++--
+ vendor/anbox/src/anbox/platform/sdl/platform.cpp   | 4 ++--
+ vendor/anbox/src/anbox/platform/sdl/platform.h     | 2 +-
+ 8 files changed, 20 insertions(+), 12 deletions(-)
+
+diff --git a/vendor/anbox/src/anbox/audio/server.cpp b/vendor/anbox/src/anbox/audio/server.cpp
+index ad13968..21f86ae 100644
+--- a/vendor/anbox/src/anbox/audio/server.cpp
++++ b/vendor/anbox/src/anbox/audio/server.cpp
+@@ -31,8 +31,10 @@ using namespace std::placeholders;
+ namespace {
+ class AudioForwarder : public anbox::network::MessageProcessor {
+  public:
+-  AudioForwarder(const std::shared_ptr<anbox::audio::Sink> &sink) :
+-    sink_(sink) {
++  AudioForwarder(const std::shared_ptr<anbox::audio::Sink> &sink, 
++                 const std::shared_ptr<anbox::network::LocalSocketMessenger> &messenger) :
++    sink_(sink), 
++    messenger_(messenger) {
+   }
+ 
+   bool process_data(const std::vector<std::uint8_t> &data) override {
+@@ -42,6 +44,7 @@ class AudioForwarder : public anbox::network::MessageProcessor {
+ 
+  private:
+   std::shared_ptr<anbox::audio::Sink> sink_;
++  std::shared_ptr<anbox::network::LocalSocketMessenger> messenger_;
+ };
+ }
+ 
+@@ -81,7 +84,7 @@ void Server::create_connection_for(std::shared_ptr<boost::asio::basic_stream_soc
+ 
+   switch (client_info.type) {
+   case ClientInfo::Type::Playback:
+-    processor = std::make_shared<AudioForwarder>(platform_->create_audio_sink());
++    processor = std::make_shared<AudioForwarder>(platform_->create_audio_sink(messenger), messenger);
+     break;
+   case ClientInfo::Type::Recording:
+     break;
+diff --git a/vendor/anbox/src/anbox/platform/base_platform.h b/vendor/anbox/src/anbox/platform/base_platform.h
+index 1b43958..4e06e53 100644
+--- a/vendor/anbox/src/anbox/platform/base_platform.h
++++ b/vendor/anbox/src/anbox/platform/base_platform.h
+@@ -20,6 +20,7 @@
+ 
+ #include "anbox/graphics/rect.h"
+ #include "anbox/wm/window_state.h"
++#include "anbox/network/local_socket_messenger.h"
+ 
+ #include <memory>
+ 
+@@ -51,7 +52,7 @@ class BasePlatform {
+   virtual void set_clipboard_data(const ClipboardData &data) = 0;
+   virtual ClipboardData get_clipboard_data() = 0;
+ 
+-  virtual std::shared_ptr<audio::Sink> create_audio_sink() = 0;
++  virtual std::shared_ptr<audio::Sink> create_audio_sink(const std::shared_ptr<anbox::network::LocalSocketMessenger> &messenger) = 0;
+   virtual std::shared_ptr<audio::Source> create_audio_source() = 0;
+ 
+   virtual void set_renderer(const std::shared_ptr<Renderer> &renderer) = 0;
+diff --git a/vendor/anbox/src/anbox/platform/null/platform.cpp b/vendor/anbox/src/anbox/platform/null/platform.cpp
+index c894806..27a97e3 100644
+--- a/vendor/anbox/src/anbox/platform/null/platform.cpp
++++ b/vendor/anbox/src/anbox/platform/null/platform.cpp
+@@ -48,7 +48,8 @@ NullPlatform::ClipboardData NullPlatform::get_clipboard_data() {
+   return ClipboardData{};
+ }
+ 
+-std::shared_ptr<audio::Sink> NullPlatform::create_audio_sink() {
++std::shared_ptr<audio::Sink> NullPlatform::create_audio_sink(const std::shared_ptr<network::LocalSocketMessenger> &messenger) {
++  (void) messenger;
+   ERROR("Not implemented");
+   return nullptr;
+ }
+diff --git a/vendor/anbox/src/anbox/platform/null/platform.h b/vendor/anbox/src/anbox/platform/null/platform.h
+index 24ad341..c0da52b 100644
+--- a/vendor/anbox/src/anbox/platform/null/platform.h
++++ b/vendor/anbox/src/anbox/platform/null/platform.h
+@@ -31,7 +31,7 @@ class NullPlatform : public BasePlatform {
+       const std::string &title) override;
+   void set_clipboard_data(const ClipboardData &data) override;
+   ClipboardData get_clipboard_data() override;
+-  std::shared_ptr<audio::Sink> create_audio_sink() override;
++  std::shared_ptr<audio::Sink> create_audio_sink(const std::shared_ptr<network::LocalSocketMessenger> &messenger) override;
+   std::shared_ptr<audio::Source> create_audio_source() override;
+   void set_renderer(const std::shared_ptr<Renderer> &renderer) override;
+   void set_window_manager(const std::shared_ptr<wm::Manager> &window_manager) override;
+diff --git a/vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp b/vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp
+index 5a0c4ad..118093d 100644
+--- a/vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp
++++ b/vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp
+@@ -29,7 +29,8 @@ const constexpr size_t max_queue_size{16};
+ namespace anbox {
+ namespace platform {
+ namespace sdl {
+-AudioSink::AudioSink() :
++AudioSink::AudioSink(const std::shared_ptr<network::LocalSocketMessenger> &messenger) :
++  messenger_(messenger),
+   device_id_(0),
+   queue_(max_queue_size) {
+ }
+diff --git a/vendor/anbox/src/anbox/platform/sdl/audio_sink.h b/vendor/anbox/src/anbox/platform/sdl/audio_sink.h
+index f09db69..636bcb1 100644
+--- a/vendor/anbox/src/anbox/platform/sdl/audio_sink.h
++++ b/vendor/anbox/src/anbox/platform/sdl/audio_sink.h
+@@ -21,6 +21,7 @@
+ #include "anbox/audio/sink.h"
+ #include "anbox/graphics/buffer_queue.h"
+ #include "anbox/platform/sdl/sdl_wrapper.h"
++#include "anbox/network/local_socket_messenger.h"
+ 
+ #include <thread>
+ 
+@@ -29,7 +30,7 @@ namespace platform {
+ namespace sdl {
+ class AudioSink : public audio::Sink {
+  public:
+-  AudioSink();
++  AudioSink(const std::shared_ptr<network::LocalSocketMessenger> &messenger);
+   ~AudioSink();
+ 
+   void write_data(const std::vector<std::uint8_t> &data) override;
+@@ -40,7 +41,8 @@ class AudioSink : public audio::Sink {
+   void read_data(std::uint8_t *buffer, int size);
+ 
+   static void on_data_requested(void *user_data, std::uint8_t *buffer, int size);
+-
++  
++  std::shared_ptr<anbox::network::LocalSocketMessenger> messenger_;
+   std::mutex lock_;
+   SDL_AudioSpec spec_;
+   SDL_AudioDeviceID device_id_;
+diff --git a/vendor/anbox/src/anbox/platform/sdl/platform.cpp b/vendor/anbox/src/anbox/platform/sdl/platform.cpp
+index 4c5b3a5..a940dc8 100644
+--- a/vendor/anbox/src/anbox/platform/sdl/platform.cpp
++++ b/vendor/anbox/src/anbox/platform/sdl/platform.cpp
+@@ -496,8 +496,8 @@ Platform::ClipboardData Platform::get_clipboard_data() {
+   return data;
+ }
+ 
+-std::shared_ptr<audio::Sink> Platform::create_audio_sink() {
+-  return std::make_shared<AudioSink>();
++std::shared_ptr<audio::Sink> Platform::create_audio_sink(const std::shared_ptr<network::LocalSocketMessenger> &messenger) {
++  return std::make_shared<AudioSink>(messenger);
+ }
+ 
+ std::shared_ptr<audio::Source> Platform::create_audio_source() {
+diff --git a/vendor/anbox/src/anbox/platform/sdl/platform.h b/vendor/anbox/src/anbox/platform/sdl/platform.h
+index 898c545..d88a0de 100644
+--- a/vendor/anbox/src/anbox/platform/sdl/platform.h
++++ b/vendor/anbox/src/anbox/platform/sdl/platform.h
+@@ -65,7 +65,7 @@ class Platform : public std::enable_shared_from_this<Platform>,
+   void set_clipboard_data(const ClipboardData &data) override;
+   ClipboardData get_clipboard_data() override;
+ 
+-  std::shared_ptr<audio::Sink> create_audio_sink() override;
++  std::shared_ptr<audio::Sink> create_audio_sink(const std::shared_ptr<network::LocalSocketMessenger> &messenger) override;
+   std::shared_ptr<audio::Source> create_audio_source() override;
+ 
+   bool supports_multi_window() const override;
+-- 
+2.28.0
+
