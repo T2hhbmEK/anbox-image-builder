@@ -8,11 +8,9 @@ Subject: [PATCH 2/2] Implement audio timing
  vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp | 17 ++++++++++++++++-
  2 files changed, 24 insertions(+), 1 deletion(-)
 
-diff --git a/vendor/anbox/android/audio/audio_hw.cpp b/vendor/anbox/android/audio/audio_hw.cpp
-index f44e738..39b8456 100644
 --- a/vendor/anbox/android/audio/audio_hw.cpp
 +++ b/vendor/anbox/android/audio/audio_hw.cpp
-@@ -180,6 +180,14 @@ static ssize_t out_write(struct audio_stream_out *stream, const void *buffer,
+@@ -180,6 +180,14 @@
    pthread_mutex_lock(&adev->lock);
    if (out->fd >= 0)
      bytes = write(out->fd, buffer, bytes);
@@ -27,8 +25,6 @@ index f44e738..39b8456 100644
    pthread_mutex_unlock(&adev->lock);
    return bytes;
  }
-diff --git a/vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp b/vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp
-index 118093d..480fe18 100644
 --- a/vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp
 +++ b/vendor/anbox/src/anbox/platform/sdl/audio_sink.cpp
 @@ -19,11 +19,12 @@
@@ -44,8 +40,8 @@ index 118093d..480fe18 100644
 +const constexpr size_t max_queue_size{1};
  }
  
- namespace anbox {
-@@ -114,6 +115,20 @@ void AudioSink::write_data(const std::vector<std::uint8_t> &data) {
+ namespace anbox::platform::sdl {
+@@ -112,5 +113,19 @@
    }
    graphics::Buffer buffer{data.data(), data.data() + data.size()};
    queue_.push_locked(std::move(buffer), l);
@@ -64,8 +60,4 @@ index 118093d..480fe18 100644
 +
 +  messenger_->send(reinterpret_cast<char*>(&now_us), sizeof(now_us));
  }
- } // namespace sdl
- } // namespace platform
--- 
-2.28.0
-
+ }
