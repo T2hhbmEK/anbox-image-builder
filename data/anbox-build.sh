@@ -14,7 +14,7 @@ fi
 export QUILT_PATCHES=.patches
 
 if [ -d .pc ]; then
-  quilt pop -a
+  quilt pop -a || rm -rf .pc
   rm -rf .patches
 fi
 
